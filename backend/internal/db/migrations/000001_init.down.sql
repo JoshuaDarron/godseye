@@ -1,0 +1,3 @@
+-- Extensions should not be dropped as they may be used by other schemas or
+-- objects in the database. Dropping postgis or timescaledb could cause
+-- cascading data loss.

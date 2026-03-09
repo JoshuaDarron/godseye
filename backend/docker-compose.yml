@@ -1,0 +1,19 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: godseye
+      POSTGRES_PASSWORD: godseye
+      POSTGRES_DB: globaltracker
+    volumes:
+      - timescaledb_data:/home/postgres/pgdata/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  timescaledb_data:
