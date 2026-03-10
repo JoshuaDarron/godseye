@@ -11,7 +11,9 @@
       "Bash(npx tsc:*)",
       "Bash(pnpm build:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(go get:*)"
     ]
   }
 }
