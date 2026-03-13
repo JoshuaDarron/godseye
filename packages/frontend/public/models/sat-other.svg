@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- Generic/other satellite - simple cubesat -->
+  <!-- Cube body -->
+  <rect x="24" y="24" width="16" height="16" rx="2" fill="#dddddd" stroke="#aaaaaa" stroke-width="1"/>
+  <!-- Solar panel faces -->
+  <rect x="26" y="26" width="12" height="5" rx="0.5" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <!-- Small deployable panels -->
+  <rect x="10" y="28" width="12" height="8" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <rect x="42" y="28" width="12" height="8" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <!-- Arms -->
+  <rect x="22" y="30" width="2" height="4" fill="#bbbbbb"/>
+  <rect x="40" y="30" width="2" height="4" fill="#bbbbbb"/>
+  <!-- Antenna -->
+  <line x1="32" y1="24" x2="32" y2="18" stroke="#ffffff" stroke-width="1"/>
+  <circle cx="32" cy="17" r="2" fill="none" stroke="#ffffff" stroke-width="0.8"/>
+</svg>

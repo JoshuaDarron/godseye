@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- Science/research satellite (Hubble-like) -->
+  <!-- Tube body -->
+  <rect x="20" y="14" width="24" height="36" rx="3" fill="#cccccc" stroke="#999999" stroke-width="1"/>
+  <!-- Aperture door -->
+  <rect x="22" y="14" width="20" height="6" rx="2" fill="#555555" stroke="#444444" stroke-width="0.5"/>
+  <circle cx="32" cy="17" r="2" fill="#333333"/>
+  <!-- Solar panels -->
+  <rect x="2" y="26" width="16" height="12" rx="1" fill="#2255aa" stroke="#4477cc" stroke-width="1"/>
+  <rect x="46" y="26" width="16" height="12" rx="1" fill="#2255aa" stroke="#4477cc" stroke-width="1"/>
+  <rect x="18" y="30" width="2" height="4" fill="#bbbbbb"/>
+  <rect x="44" y="30" width="2" height="4" fill="#bbbbbb"/>
+  <!-- Body bands -->
+  <line x1="20" y1="28" x2="44" y2="28" stroke="#aaaaaa" stroke-width="0.5"/>
+  <line x1="20" y1="36" x2="44" y2="36" stroke="#aaaaaa" stroke-width="0.5"/>
+  <!-- Instrument bay -->
+  <rect x="25" y="40" width="14" height="8" rx="1" fill="#8866aa" stroke="#775599" stroke-width="0.5"/>
+</svg>

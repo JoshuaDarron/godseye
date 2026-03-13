@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- OneWeb - compact body with circular panels -->
+  <!-- Central drum body -->
+  <rect x="26" y="22" width="12" height="20" rx="3" fill="#dddddd" stroke="#aaaaaa" stroke-width="1"/>
+  <!-- Circular solar panels -->
+  <circle cx="16" cy="32" r="10" fill="#2255aa" stroke="#4477cc" stroke-width="1"/>
+  <circle cx="48" cy="32" r="10" fill="#2255aa" stroke="#4477cc" stroke-width="1"/>
+  <!-- Panel cross lines -->
+  <line x1="16" y1="22" x2="16" y2="42" stroke="#4477cc" stroke-width="0.5"/>
+  <line x1="6" y1="32" x2="26" y2="32" stroke="#4477cc" stroke-width="0.5"/>
+  <line x1="48" y1="22" x2="48" y2="42" stroke="#4477cc" stroke-width="0.5"/>
+  <line x1="38" y1="32" x2="58" y2="32" stroke="#4477cc" stroke-width="0.5"/>
+  <!-- Arms -->
+  <rect x="22" y="30" width="4" height="4" fill="#bbbbbb"/>
+  <rect x="38" y="30" width="4" height="4" fill="#bbbbbb"/>
+</svg>

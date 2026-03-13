@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- Iridium NEXT - three main antenna panels -->
+  <!-- Central body -->
+  <rect x="26" y="20" width="12" height="24" rx="2" fill="#dddddd" stroke="#aaaaaa" stroke-width="1"/>
+  <!-- Three angled antenna panels (Iridium's signature) -->
+  <rect x="6" y="22" width="18" height="10" rx="1" fill="#ccaa44" stroke="#aa8833" stroke-width="0.5" transform="rotate(-15 15 27)"/>
+  <rect x="40" y="22" width="18" height="10" rx="1" fill="#ccaa44" stroke="#aa8833" stroke-width="0.5" transform="rotate(15 49 27)"/>
+  <rect x="26" y="8" width="12" height="10" rx="1" fill="#ccaa44" stroke="#aa8833" stroke-width="0.5"/>
+  <!-- Solar panels (smaller, below) -->
+  <rect x="8" y="36" width="14" height="6" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <rect x="42" y="36" width="14" height="6" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <!-- Arms -->
+  <rect x="22" y="37" width="4" height="4" fill="#bbbbbb"/>
+  <rect x="38" y="37" width="4" height="4" fill="#bbbbbb"/>
+  <!-- Body detail -->
+  <rect x="28" y="28" width="8" height="4" rx="0.5" fill="#888888"/>
+</svg>

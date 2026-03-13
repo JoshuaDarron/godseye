@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- Space station (ISS-like) -->
+  <!-- Main truss -->
+  <rect x="4" y="30" width="56" height="4" rx="1" fill="#cccccc" stroke="#aaaaaa" stroke-width="0.5"/>
+  <!-- Habitat modules -->
+  <rect x="22" y="24" width="20" height="16" rx="3" fill="#dddddd" stroke="#aaaaaa" stroke-width="1"/>
+  <rect x="16" y="28" width="8" height="8" rx="2" fill="#cccccc" stroke="#999999" stroke-width="0.5"/>
+  <rect x="40" y="28" width="8" height="8" rx="2" fill="#cccccc" stroke="#999999" stroke-width="0.5"/>
+  <!-- Solar panel arrays (4 pairs) -->
+  <rect x="2" y="18" width="12" height="8" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <rect x="2" y="38" width="12" height="8" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <rect x="50" y="18" width="12" height="8" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <rect x="50" y="38" width="12" height="8" rx="1" fill="#2266bb" stroke="#4488dd" stroke-width="0.5"/>
+  <!-- Radiator panels -->
+  <rect x="28" y="16" width="8" height="6" rx="0.5" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" opacity="0.8"/>
+  <rect x="28" y="42" width="8" height="6" rx="0.5" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" opacity="0.8"/>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- Military/classified satellite - angular stealth shape -->
+  <!-- Angular body -->
+  <polygon points="32,12 44,28 44,44 32,52 20,44 20,28" fill="#444444" stroke="#666666" stroke-width="1"/>
+  <!-- Dark panels -->
+  <polygon points="32,16 40,28 40,40 32,46 24,40 24,28" fill="#333333" stroke="#555555" stroke-width="0.5"/>
+  <!-- Solar panels - darker tint -->
+  <rect x="4" y="28" width="14" height="8" rx="1" fill="#1a3355" stroke="#335577" stroke-width="1"/>
+  <rect x="46" y="28" width="14" height="8" rx="1" fill="#1a3355" stroke="#335577" stroke-width="1"/>
+  <!-- Arms -->
+  <rect x="18" y="30" width="2" height="4" fill="#555555"/>
+  <rect x="44" y="30" width="2" height="4" fill="#555555"/>
+  <!-- Sensor array -->
+  <circle cx="32" cy="32" r="4" fill="#cc3333" stroke="#aa2222" stroke-width="0.5" opacity="0.8"/>
+  <circle cx="32" cy="32" r="1.5" fill="#ff4444"/>
+</svg>
