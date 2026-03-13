@@ -82,7 +82,10 @@ function PickHandler() {
       try {
         const picked = viewer.scene.pick(click.position)
         if (defined(picked) && picked.id?.layer && picked.id?.entityId) {
-          setSelected({ layer: picked.id.layer, entityId: picked.id.entityId })
+          setSelected(
+            { layer: picked.id.layer, entityId: picked.id.entityId },
+            { x: click.position.x, y: click.position.y },
+          )
         } else {
           setSelected(null)
         }

@@ -4,8 +4,11 @@ import { useSatelliteStore } from '../../stores/satelliteStore'
 export default function SatelliteTooltip() {
   const hovered = useSelectedEntityStore((s) => s.hovered)
   const hoverPosition = useSelectedEntityStore((s) => s.hoverPosition)
+  const selected = useSelectedEntityStore((s) => s.selected)
   const satellites = useSatelliteStore((s) => s.satellites)
 
+  // Hide tooltip when an entity is selected (the detail modal is open).
+  if (selected) return null
   if (!hovered || hovered.layer !== 'satellites' || !hoverPosition) return null
 
   const sat = satellites.get(hovered.entityId)

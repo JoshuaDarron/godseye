@@ -6,11 +6,41 @@ const DEFAULT_WIDTH = 360
 const DEFAULT_HEIGHT = 200
 const MIN_WIDTH = 260
 const MIN_HEIGHT = 140
+const OFFSET = 16
 
 type DragMode = 'move' | 'resize' | null
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+/** Position the modal to the side of the click point, keeping it on screen. */
+function computeInitialPosition(
+  clickX: number,
+  clickY: number,
+  width: number,
+  height: number,
+) {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+
+  // Prefer placing to the right of the click; flip left if it would overflow.
+  let x = clickX + OFFSET
+  if (x + width > vw - OFFSET) {
+    x = clickX - width - OFFSET
+  }
+  x = clamp(x, OFFSET, vw - width - OFFSET)
+
+  // Vertically center on the click point, clamped to viewport.
+  let y = clickY - height / 2
+  y = clamp(y, OFFSET, vh - height - OFFSET)
+
+  return { x: Math.round(x), y: Math.round(y) }
+}
+
 export default function SatelliteDetailPanel() {
   const selected = useSelectedEntityStore((s) => s.selected)
+  const screenPos = useSelectedEntityStore((s) => s.selectedScreenPosition)
   const clearSelected = useSelectedEntityStore((s) => s.clearSelected)
   const satellites = useSatelliteStore((s) => s.satellites)
 
@@ -23,22 +53,20 @@ export default function SatelliteDetailPanel() {
   const startPos = useRef({ x: 0, y: 0 })
   const startSize = useRef({ w: 0, h: 0 })
 
-  // Center the modal when a new selection is made.
+  // Position the modal beside the selected entity.
   useEffect(() => {
     if (selected && selected.layer === 'satellites') {
-      setPos({
-        x: Math.round((window.innerWidth - DEFAULT_WIDTH) / 2),
-        y: Math.round((window.innerHeight - DEFAULT_HEIGHT) / 2),
-      })
+      const clickX = screenPos?.x ?? window.innerWidth / 2
+      const clickY = screenPos?.y ?? window.innerHeight / 2
+      setPos(computeInitialPosition(clickX, clickY, DEFAULT_WIDTH, DEFAULT_HEIGHT))
       setSize({ w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT })
       setInitialized(true)
     } else {
       setInitialized(false)
     }
-  }, [selected])
+  }, [selected, screenPos])
 
   const onMoveDown = useCallback((e: React.PointerEvent) => {
-    // Ignore if clicking the close button.
     if ((e.target as HTMLElement).closest('button')) return
     e.preventDefault()
     mode.current = 'move'
