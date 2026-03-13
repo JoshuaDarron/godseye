@@ -24,6 +24,42 @@ const ORBIT_SAMPLE_COUNT = 360
 const ORBIT_COLOR = Color.CYAN.withAlpha(0.6)
 const NADIR_COLOR = Color.CYAN.withAlpha(0.4)
 
+// Custom animated dash material using czm_frameNumber (auto-incremented by Cesium).
+const ANIMATED_DASH_TYPE = 'AnimatedDash'
+const ANIMATED_DASH_SOURCE = `
+uniform vec4 color;
+uniform float dashLength;
+uniform float speed;
+
+czm_material czm_getMaterial(czm_materialInput materialInput) {
+  czm_material material = czm_getDefaultMaterial(materialInput);
+  float t = float(czm_frameNumber) * speed;
+  float pos = materialInput.st.s / dashLength - t;
+  float pattern = step(0.5, fract(pos));
+  material.diffuse = color.rgb;
+  material.alpha = color.a * pattern;
+  return material;
+}
+`
+
+let materialTypeRegistered = false
+function ensureMaterialType() {
+  if (materialTypeRegistered) return
+  materialTypeRegistered = true
+  ;(Material as any)._materialCache.addMaterial(ANIMATED_DASH_TYPE, {
+    fabric: {
+      type: ANIMATED_DASH_TYPE,
+      uniforms: {
+        color: new Color(0, 1, 1, 0.6),
+        dashLength: 0.006,
+        speed: 0.005,
+      },
+      source: ANIMATED_DASH_SOURCE,
+    },
+    translucent: true,
+  })
+}
+
 export default function SatelliteOrbitOverlay() {
   const { viewer: rawViewer } = useCesium()
   const selected = useSelectedEntityStore((s) => s.selected)
@@ -31,12 +67,17 @@ export default function SatelliteOrbitOverlay() {
 
   const orbitCollectionRef = useRef<PolylineCollection | null>(null)
   const nadirCollectionRef = useRef<PolylineCollection | null>(null)
+  const animFrameRef = useRef<number>(0)
 
   useEffect(() => {
     if (!rawViewer) return
     const viewer = rawViewer as CesiumViewer
 
-    // Clean up previous polylines.
+    // Clean up previous polylines and animation.
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current)
+      animFrameRef.current = 0
+    }
     if (orbitCollectionRef.current) {
       viewer.scene.primitives.remove(orbitCollectionRef.current)
       orbitCollectionRef.current = null
@@ -121,17 +162,30 @@ export default function SatelliteOrbitOverlay() {
     }
     if (currentSegment.length >= 2) segments.push(currentSegment)
 
-    // Draw orbit path.
+    // Draw orbit path with animated dash material.
+    ensureMaterialType()
     const orbitCollection = new PolylineCollection()
     for (const seg of segments) {
+      const mat = Material.fromType(ANIMATED_DASH_TYPE, {
+        color: ORBIT_COLOR,
+        dashLength: 0.006,
+        speed: 0.005,
+      })
       orbitCollection.add({
         positions: seg,
-        width: 1.5,
-        material: Material.fromType('Color', { color: ORBIT_COLOR }),
+        width: 2,
+        material: mat,
       })
     }
     viewer.scene.primitives.add(orbitCollection)
     orbitCollectionRef.current = orbitCollection
+
+    // Continuously request renders so czm_frameNumber advances the dash animation.
+    const animate = () => {
+      viewer.scene.requestRender()
+      animFrameRef.current = requestAnimationFrame(animate)
+    }
+    animFrameRef.current = requestAnimationFrame(animate)
 
     // Draw nadir line from satellite to ground.
     const altMeters = (sat.altitude || 0) * 1000
@@ -172,6 +226,7 @@ export default function SatelliteOrbitOverlay() {
   // Cleanup on unmount.
   useEffect(() => {
     return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
       if (!rawViewer) return
       const viewer = rawViewer as CesiumViewer
       if (orbitCollectionRef.current) {
