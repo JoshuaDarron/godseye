@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
-import { Ion, Color, UrlTemplateImageryProvider, Viewer as CesiumViewer } from 'cesium'
+import { Ion, Color, UrlTemplateImageryProvider, IonImageryProvider, ImageryLayer, Viewer as CesiumViewer, ScreenSpaceEventHandler, ScreenSpaceEventType, defined, Cartesian2 } from 'cesium'
 import { Viewer, Globe as CesiumGlobe, Scene, SkyAtmosphere, useCesium } from 'resium'
 import FlightLayer from './FlightLayer'
 import SatelliteLayer from './SatelliteLayer'
 import { useWebSocket } from '../../hooks/useWebSocket'
+import { useSelectedEntityStore } from '../../stores/selectedEntityStore'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN as string | undefined
 if (token) {
@@ -25,6 +26,20 @@ function ViewerInit() {
       }),
     )
 
+    // Add city lights layer (NASA Black Marble) visible only on the night side.
+    IonImageryProvider.fromAssetId(3812).then((nightProvider) => {
+      if (!viewer.isDestroyed()) {
+        viewer.imageryLayers.add(new ImageryLayer(nightProvider, {
+          dayAlpha: 0.0,
+          nightAlpha: 1.0,
+        }))
+      }
+    }).catch((err) => console.error('Failed to load city lights layer:', err))
+
+    // Run the clock in real-time so day/night matches reality.
+    viewer.clock.multiplier = 1.0
+    viewer.clock.shouldAnimate = true
+
     // Hide the Cesium Ion credit logo.
     const credit = viewer.cesiumWidget.creditContainer as HTMLElement
     credit.style.display = 'none'
@@ -32,6 +47,53 @@ function ViewerInit() {
     // Force a resize so the viewer picks up final CSS-computed dimensions.
     viewer.resize()
   }, [rawViewer])
+
+  return null
+}
+
+function PickHandler() {
+  const { viewer: rawViewer } = useCesium()
+  const setHovered = useSelectedEntityStore((s) => s.setHovered)
+  const setSelected = useSelectedEntityStore((s) => s.setSelected)
+
+  useEffect(() => {
+    if (!rawViewer) return
+    const viewer = rawViewer as CesiumViewer
+    const handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
+
+    handler.setInputAction((movement: { endPosition: Cartesian2 }) => {
+      try {
+        const picked = viewer.scene.pick(movement.endPosition)
+        if (defined(picked) && picked.id?.layer && picked.id?.entityId) {
+          setHovered(
+            { layer: picked.id.layer, entityId: picked.id.entityId },
+            { x: movement.endPosition.x, y: movement.endPosition.y },
+          )
+        } else {
+          setHovered(null, null)
+        }
+      } catch {
+        setHovered(null, null)
+      }
+    }, ScreenSpaceEventType.MOUSE_MOVE)
+
+    handler.setInputAction((click: { position: Cartesian2 }) => {
+      try {
+        const picked = viewer.scene.pick(click.position)
+        if (defined(picked) && picked.id?.layer && picked.id?.entityId) {
+          setSelected({ layer: picked.id.layer, entityId: picked.id.entityId })
+        } else {
+          setSelected(null)
+        }
+      } catch {
+        setSelected(null)
+      }
+    }, ScreenSpaceEventType.LEFT_CLICK)
+
+    return () => {
+      handler.destroy()
+    }
+  }, [rawViewer, setHovered, setSelected])
 
   return null
 }
@@ -54,8 +116,13 @@ export default function Globe() {
     >
       <Scene backgroundColor={Color.BLACK} />
       <SkyAtmosphere />
-      <CesiumGlobe showGroundAtmosphere />
+      <CesiumGlobe
+        showGroundAtmosphere
+        enableLighting
+        dynamicAtmosphereLightingFromSun
+      />
       <ViewerInit />
+      <PickHandler />
       <FlightLayer />
       <SatelliteLayer />
     </Viewer>

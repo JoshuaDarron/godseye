@@ -26,6 +26,8 @@ interface ModelLayerProps {
   iconScale?: number
   /** Heading offset in degrees to align icon's forward direction with heading=0 (north). */
   headingOffset?: number
+  /** Identifier for this layer, used by pick handlers to trace billboards back to data. */
+  layerName?: string
 }
 
 /**
@@ -40,6 +42,7 @@ export default function ModelLayer({
   fallbackPixelSize = 3,
   iconScale = 1,
   headingOffset = 0,
+  layerName,
 }: ModelLayerProps) {
   const { scene } = useCesium()
   const billboardRef = useRef<BillboardCollection | null>(null)
@@ -99,6 +102,7 @@ export default function ModelLayer({
           rotation: -CesiumMath.toRadians((entity.heading || 0) + headingOffset),
           verticalOrigin: VerticalOrigin.CENTER,
           alignedAxis: Cartesian3.UNIT_Z,
+          id: layerName ? { layer: layerName, entityId: entity.id } : undefined,
         })
       })
     } else {
@@ -107,6 +111,7 @@ export default function ModelLayer({
           position: Cartesian3.fromDegrees(entity.lon, entity.lat, entity.alt),
           pixelSize: fallbackPixelSize,
           color: fallbackColor,
+          id: layerName ? { layer: layerName, entityId: entity.id } : undefined,
         })
       })
     }

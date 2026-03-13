@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 import { Color } from 'cesium'
 import { useSatelliteStore } from '../../stores/satelliteStore'
+import { useLayerVisibilityStore } from '../../stores/layerVisibilityStore'
 import ModelLayer, { type ModelEntity } from './ModelLayer'
 
 export default function SatelliteLayer() {
+  const visible = useLayerVisibilityStore((s) => s.layers.satellites)
   const satellites = useSatelliteStore((s) => s.satellites)
 
   const entities = useMemo(() => {
@@ -22,6 +24,8 @@ export default function SatelliteLayer() {
     return map
   }, [satellites])
 
+  if (!visible) return null
+
   return (
     <ModelLayer
       iconUrl="/models/satellite.png"
@@ -29,6 +33,7 @@ export default function SatelliteLayer() {
       fallbackColor={Color.YELLOW}
       fallbackPixelSize={2}
       iconScale={0.4}
+      layerName="satellites"
     />
   )
 }
