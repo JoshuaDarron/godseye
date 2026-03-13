@@ -5,9 +5,11 @@ import {
   Cartesian3,
   Color,
   Math as CesiumMath,
+  NearFarScalar,
   PointPrimitiveCollection,
   VerticalOrigin,
 } from 'cesium'
+import { useSelectedEntityStore } from '../../stores/selectedEntityStore'
 
 export interface ModelEntity {
   id: string
@@ -45,6 +47,8 @@ export default function ModelLayer({
   layerName,
 }: ModelLayerProps) {
   const { scene } = useCesium()
+  const selected = useSelectedEntityStore((s) => s.selected)
+  const selectedId = selected && selected.layer === layerName ? selected.entityId : null
   const billboardRef = useRef<BillboardCollection | null>(null)
   const fallbackRef = useRef<PointPrimitiveCollection | null>(null)
   const iconAvailableRef = useRef<boolean | null>(null)
@@ -95,10 +99,13 @@ export default function ModelLayer({
 
     if (useIcon) {
       entities.forEach((entity) => {
+        const isSelected = entity.id === selectedId
         billboards.add({
           position: Cartesian3.fromDegrees(entity.lon, entity.lat, entity.alt),
           image: iconUrl,
-          scale: iconScale,
+          scale: isSelected ? iconScale * 2 : iconScale,
+          scaleByDistance: new NearFarScalar(1_000, 2.0, 10_000_000, 0.2),
+          color: isSelected ? Color.CYAN : Color.WHITE,
           rotation: -CesiumMath.toRadians((entity.heading || 0) + headingOffset),
           verticalOrigin: VerticalOrigin.CENTER,
           alignedAxis: Cartesian3.UNIT_Z,
@@ -107,15 +114,19 @@ export default function ModelLayer({
       })
     } else {
       entities.forEach((entity) => {
+        const isSelected = entity.id === selectedId
         points.add({
           position: Cartesian3.fromDegrees(entity.lon, entity.lat, entity.alt),
-          pixelSize: fallbackPixelSize,
-          color: fallbackColor,
+          pixelSize: isSelected ? fallbackPixelSize * 3 : fallbackPixelSize,
+          scaleByDistance: new NearFarScalar(1_000, 2.0, 10_000_000, 0.2),
+          color: isSelected ? Color.CYAN : fallbackColor,
+          outlineColor: isSelected ? Color.WHITE : Color.TRANSPARENT,
+          outlineWidth: isSelected ? 2 : 0,
           id: layerName ? { layer: layerName, entityId: entity.id } : undefined,
         })
       })
     }
-  }, [entities, scene, iconUrl, iconScale, headingOffset, fallbackColor, fallbackPixelSize])
+  }, [entities, scene, iconUrl, iconScale, headingOffset, fallbackColor, fallbackPixelSize, selectedId])
 
   return null
 }

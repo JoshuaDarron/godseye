@@ -28,7 +28,7 @@ export default function SatelliteLayer() {
 
   return (
     <ModelLayer
-      iconUrl="/models/satellite.png"
+      iconUrl="/models/satellite.svg"
       entities={entities}
       fallbackColor={Color.YELLOW}
       fallbackPixelSize={2}
