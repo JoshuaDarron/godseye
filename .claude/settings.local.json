@@ -31,7 +31,19 @@
       "WebFetch(domain:www.n2yo.com)",
       "WebFetch(domain:celestrak.org)",
       "WebFetch(domain:spacetrack.readthedocs.io)",
-      "WebFetch(domain:s3.amazonaws.com)"
+      "WebFetch(domain:s3.amazonaws.com)",
+      "WebFetch(domain:cesium.com)",
+      "WebFetch(domain:community.cesium.com)",
+      "WebFetch(domain:sandcastle.cesium.com)",
+      "Bash(gh api:*)",
+      "Bash(docker compose:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker exec:*)",
+      "Bash(npx vite build:*)",
+      "Bash(npx vite:*)"
     ]
   }
 }
