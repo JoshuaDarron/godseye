@@ -19,6 +19,7 @@ import {
 } from 'satellite.js'
 import { useSelectedEntityStore } from '../../stores/selectedEntityStore'
 import { useSatelliteStore } from '../../stores/satelliteStore'
+import type { Satellite } from '../../types/satellite'
 
 const ORBIT_SAMPLE_COUNT = 360
 const ORBIT_COLOR = Color.CYAN.withAlpha(0.6)
@@ -62,7 +63,6 @@ function ensureMaterialType() {
 export default function SatelliteOrbitOverlay() {
   const { viewer: rawViewer } = useCesium()
   const selected = useSelectedEntityStore((s) => s.selected)
-  const satellites = useSatelliteStore((s) => s.entities)
 
   const orbitCollectionRef = useRef<PolylineCollection | null>(null)
   const nadirCollectionRef = useRef<PolylineCollection | null>(null)
@@ -88,7 +88,8 @@ export default function SatelliteOrbitOverlay() {
 
     if (!selected || selected.layer !== 'satellites') return
 
-    const sat = satellites.get(selected.entityId)
+    // Read TLE data imperatively — we only need it once per selection, not on every store update.
+    const sat = useSatelliteStore.getState().entities.get(selected.entityId) as Satellite | undefined
     if (!sat?.tle1 || !sat?.tle2) return
 
     const satrec = twoline2satrec(sat.tle1, sat.tle2)
@@ -161,19 +162,11 @@ export default function SatelliteOrbitOverlay() {
     viewer.scene.primitives.add(orbitCollection)
     orbitCollectionRef.current = orbitCollection
 
-    // Continuously request renders so czm_frameNumber advances the dash animation.
-    const animate = () => {
-      viewer.scene.requestRender()
-      animFrameRef.current = requestAnimationFrame(animate)
-    }
-    animFrameRef.current = requestAnimationFrame(animate)
-
-    // Draw nadir line from satellite to ground.
-    const altMeters = (sat.altitude || 0) * 1000
+    // Draw nadir line from satellite to ground (will be updated by the propagation loop).
     const nadirCollection = new PolylineCollection()
-    nadirCollection.add({
+    const nadirPolyline = nadirCollection.add({
       positions: [
-        Cartesian3.fromDegrees(sat.lng, sat.lat, altMeters),
+        Cartesian3.fromDegrees(sat.lng, sat.lat, (sat.altitude || 0) * 1000),
         Cartesian3.fromDegrees(sat.lng, sat.lat, 0),
       ],
       width: 1.0,
@@ -181,6 +174,28 @@ export default function SatelliteOrbitOverlay() {
     })
     viewer.scene.primitives.add(nadirCollection)
     nadirCollectionRef.current = nadirCollection
+
+    // Local propagation loop: update nadir line + request renders for dash animation.
+    const propagateAndAnimate = () => {
+      const now = new Date()
+      const posVel = propagate(satrec, now)
+      if (posVel && typeof posVel.position !== 'boolean') {
+        const gst = gstime(now)
+        const geo = eciToGeodetic(posVel.position, gst)
+        const lat = degreesLat(geo.latitude)
+        const lng = degreesLong(geo.longitude)
+        const alt = geo.height * 1000
+        if (!isNaN(lat) && !isNaN(lng) && !isNaN(alt)) {
+          nadirPolyline.positions = [
+            Cartesian3.fromDegrees(lng, lat, alt),
+            Cartesian3.fromDegrees(lng, lat, 0),
+          ]
+        }
+      }
+      viewer.scene.requestRender()
+      animFrameRef.current = requestAnimationFrame(propagateAndAnimate)
+    }
+    animFrameRef.current = requestAnimationFrame(propagateAndAnimate)
 
     // Compute screen-space bounding box of the orbit for modal placement.
     const setOrbitScreenBounds = useSelectedEntityStore.getState().setOrbitScreenBounds
@@ -202,7 +217,7 @@ export default function SatelliteOrbitOverlay() {
       setOrbitScreenBounds({ minX, maxX, minY, maxY })
     }
 
-  }, [rawViewer, selected, satellites])
+  }, [rawViewer, selected])
 
   // Cleanup on unmount.
   useEffect(() => {

@@ -19,32 +19,39 @@ import (
 
 const (
 	openSkyURL         = "https://opensky-network.org/api/states/all"
+	openSkyTokenURL    = "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token"
 	flightPollInterval = 10 * time.Second
 	flightRedisChannel = "channel:flights"
 	maxBackoffDuration = 5 * time.Minute
+	// Refresh the OAuth token 60 seconds before it expires to avoid mid-request expiry.
+	tokenRefreshBuffer = 60 * time.Second
 )
 
 // FlightWorker polls the OpenSky Network API and publishes flight deltas.
 type FlightWorker struct {
-	pool     *pgxpool.Pool
-	rdb      *redis.Client
-	username string
-	password string
-	client   *http.Client
+	pool         *pgxpool.Pool
+	rdb          *redis.Client
+	clientID     string
+	clientSecret string
+	client       *http.Client
 
 	prev     map[string]models.FlightEntity
 	failures int
+
+	// OAuth2 token state.
+	accessToken string
+	tokenExpiry time.Time
 }
 
 // NewFlightWorker creates a new FlightWorker.
-func NewFlightWorker(pool *pgxpool.Pool, rdb *redis.Client, username, password string) *FlightWorker {
+func NewFlightWorker(pool *pgxpool.Pool, rdb *redis.Client, clientID, clientSecret string) *FlightWorker {
 	return &FlightWorker{
-		pool:     pool,
-		rdb:      rdb,
-		username: username,
-		password: password,
-		client:   NewHTTPClient(30 * time.Second),
-		prev:     make(map[string]models.FlightEntity),
+		pool:         pool,
+		rdb:          rdb,
+		clientID:     clientID,
+		clientSecret: clientSecret,
+		client:       NewHTTPClient(30 * time.Second),
+		prev:         make(map[string]models.FlightEntity),
 	}
 }
 
@@ -132,14 +139,68 @@ type openSkyResponse struct {
 	States [][]interface{} `json:"states"`
 }
 
+// tokenResponse is the JSON returned by the OpenSky OAuth2 token endpoint.
+type tokenResponse struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"`
+}
+
+// refreshToken fetches a new OAuth2 bearer token using the client credentials flow.
+func (w *FlightWorker) refreshToken(ctx context.Context) error {
+	body := fmt.Sprintf("grant_type=client_credentials&client_id=%s&client_secret=%s", w.clientID, w.clientSecret)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, openSkyTokenURL, strings.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("create token request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := w.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("token request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("token request failed (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var tok tokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tok); err != nil {
+		return fmt.Errorf("decode token response: %w", err)
+	}
+
+	w.accessToken = tok.AccessToken
+	w.tokenExpiry = time.Now().Add(time.Duration(tok.ExpiresIn)*time.Second - tokenRefreshBuffer)
+	slog.Info("opensky oauth token refreshed", "expires_in", tok.ExpiresIn)
+	return nil
+}
+
+// ensureToken refreshes the OAuth2 token if it's expired or about to expire.
+func (w *FlightWorker) ensureToken(ctx context.Context) error {
+	if w.clientID == "" || w.clientSecret == "" {
+		return nil // No credentials — use anonymous access.
+	}
+	if w.accessToken != "" && time.Now().Before(w.tokenExpiry) {
+		return nil // Token is still valid.
+	}
+	return w.refreshToken(ctx)
+}
+
 func (w *FlightWorker) fetch(ctx context.Context) ([]models.FlightEntity, error) {
+	// Ensure we have a valid OAuth2 token (if credentials are configured).
+	if err := w.ensureToken(ctx); err != nil {
+		slog.Warn("oauth token refresh failed, falling back to anonymous", "error", err)
+		w.accessToken = ""
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, openSkyURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 
-	if w.username != "" && w.password != "" {
-		req.SetBasicAuth(w.username, w.password)
+	if w.accessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+w.accessToken)
 	}
 
 	resp, err := w.client.Do(req)
@@ -147,6 +208,15 @@ func (w *FlightWorker) fetch(ctx context.Context) ([]models.FlightEntity, error)
 		return nil, fmt.Errorf("http get: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// If we get a 401 with a token, invalidate it and retry anonymously.
+	if resp.StatusCode == http.StatusUnauthorized && w.accessToken != "" {
+		resp.Body.Close()
+		slog.Warn("opensky bearer token rejected (401), retrying anonymously")
+		w.accessToken = ""
+		w.tokenExpiry = time.Time{}
+		return w.fetch(ctx)
+	}
 
 	if resp.StatusCode == http.StatusTooManyRequests {
 		return nil, fmt.Errorf("rate limited (429)")
@@ -158,13 +228,13 @@ func (w *FlightWorker) fetch(ctx context.Context) ([]models.FlightEntity, error)
 		return nil, fmt.Errorf("unexpected status: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read body: %w", err)
 	}
 
 	var data openSkyResponse
-	if err := json.Unmarshal(body, &data); err != nil {
+	if err := json.Unmarshal(respBody, &data); err != nil {
 		return nil, fmt.Errorf("unmarshal: %w", err)
 	}
 

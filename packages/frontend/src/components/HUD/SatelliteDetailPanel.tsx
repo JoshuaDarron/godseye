@@ -1,5 +1,13 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@headlessui/react'
+import {
+  twoline2satrec,
+  propagate,
+  gstime,
+  eciToGeodetic,
+  degreesLat,
+  degreesLong,
+} from 'satellite.js'
 import { useSelectedEntityStore, type ScreenRect } from '../../stores/selectedEntityStore'
 import { useSatelliteStore } from '../../stores/satelliteStore'
 
@@ -124,7 +132,6 @@ export default function SatelliteDetailPanel() {
   const screenPos = useSelectedEntityStore((s) => s.selectedScreenPosition)
   const orbitBounds = useSelectedEntityStore((s) => s.orbitScreenBounds)
   const clearSelected = useSelectedEntityStore((s) => s.clearSelected)
-  const satellites = useSatelliteStore((s) => s.entities)
 
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const [size, setSize] = useState({ w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT })
@@ -214,9 +221,38 @@ export default function SatelliteDetailPanel() {
   }, [])
 
   const isOpen = !!(selected && selected.layer === 'satellites' && initialized)
-  const sat = isOpen ? satellites.get(selected!.entityId) : null
+  const sat = isOpen ? useSatelliteStore.getState().entities.get(selected!.entityId) : null
+
+  // Local SGP4 propagation for smooth stat updates (100ms).
+  const [livePos, setLivePos] = useState<{ lat: number; lng: number; alt: number; vel: number } | null>(null)
+  useEffect(() => {
+    if (!sat?.tle1 || !sat?.tle2) { setLivePos(null); return }
+    const satrec = twoline2satrec(sat.tle1, sat.tle2)
+    const tick = () => {
+      const now = new Date()
+      const posVel = propagate(satrec, now)
+      if (!posVel || typeof posVel.position === 'boolean' || typeof posVel.velocity === 'boolean') return
+      const gst = gstime(now)
+      const geo = eciToGeodetic(posVel.position, gst)
+      const lat = degreesLat(geo.latitude)
+      const lng = degreesLong(geo.longitude)
+      const alt = geo.height
+      const vel = Math.sqrt(posVel.velocity.x ** 2 + posVel.velocity.y ** 2 + posVel.velocity.z ** 2)
+      if (!isNaN(lat) && !isNaN(lng) && !isNaN(alt)) {
+        setLivePos({ lat, lng, alt, vel })
+      }
+    }
+    tick()
+    const id = setInterval(tick, 100)
+    return () => clearInterval(id)
+  }, [sat?.tle1, sat?.tle2])
 
   if (!isOpen || !sat) return null
+
+  const displayLat = livePos?.lat ?? sat.lat
+  const displayLng = livePos?.lng ?? sat.lng
+  const displayAlt = livePos?.alt ?? sat.altitude
+  const displayVel = livePos?.vel ?? sat.velocity
 
   return (
     <div
@@ -248,10 +284,10 @@ export default function SatelliteDetailPanel() {
       <div className="flex-1 bg-black/60 backdrop-blur-md text-white overflow-auto px-4 py-3">
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
           <DataField label="NORAD ID" value={String(sat.noradId)} />
-          <DataField label="Latitude" value={`${sat.lat.toFixed(4)}\u00B0`} />
-          <DataField label="Longitude" value={`${sat.lng.toFixed(4)}\u00B0`} />
-          <DataField label="Altitude" value={`${sat.altitude.toFixed(1)} km`} />
-          <DataField label="Velocity" value={`${sat.velocity.toFixed(2)} km/s`} />
+          <DataField label="Latitude" value={`${displayLat.toFixed(4)}\u00B0`} />
+          <DataField label="Longitude" value={`${displayLng.toFixed(4)}\u00B0`} />
+          <DataField label="Altitude" value={`${displayAlt.toFixed(1)} km`} />
+          <DataField label="Velocity" value={`${displayVel.toFixed(2)} km/s`} />
         </div>
       </div>
 

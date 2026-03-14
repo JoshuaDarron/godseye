@@ -8,8 +8,8 @@ type Config struct {
 	RedisURL    string
 	ServerAddr  string
 
-	OpenSkyUsername  string
-	OpenSkyPassword string
+	OpenSkyClientID     string
+	OpenSkyClientSecret string
 
 	AISHubUsername string
 
@@ -26,8 +26,8 @@ func Load() *Config {
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 		ServerAddr:  getEnv("SERVER_ADDR", ":8080"),
 
-		OpenSkyUsername:  os.Getenv("OPENSKY_USERNAME"),
-		OpenSkyPassword:  os.Getenv("OPENSKY_PASSWORD"),
+		OpenSkyClientID:     os.Getenv("OPENSKY_CLIENT_ID"),
+		OpenSkyClientSecret: os.Getenv("OPENSKY_CLIENT_SECRET"),
 
 		AISHubUsername: os.Getenv("AISHUB_USERNAME"),
 

@@ -72,7 +72,7 @@ func main() {
 	}()
 
 	// Set up ingestion workers.
-	flightWorker := ingestion.NewFlightWorker(pool, rdb, cfg.OpenSkyUsername, cfg.OpenSkyPassword)
+	flightWorker := ingestion.NewFlightWorker(pool, rdb, cfg.OpenSkyClientID, cfg.OpenSkyClientSecret)
 	satelliteWorker := ingestion.NewSatelliteWorker(pool, rdb)
 	mgr := ingestion.NewManager(flightWorker, satelliteWorker)
 	go mgr.StartAll(ctx)
