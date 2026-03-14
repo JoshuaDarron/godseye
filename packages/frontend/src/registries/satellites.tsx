@@ -7,6 +7,7 @@ import SatelliteDetailPanel from '../components/HUD/SatelliteDetailPanel'
 import SatelliteTooltip from '../components/HUD/SatelliteTooltip'
 import SatelliteOrbitOverlay from '../components/Globe/SatelliteOrbitOverlay'
 import SatelliteFootprintOverlay from '../components/Globe/SatelliteFootprintOverlay'
+import SatellitePropagationLayer from '../components/Globe/SatellitePropagationLayer'
 import { registerLayer } from './layerRegistry'
 
 const ICON_CLASS = 'w-4 h-4 shrink-0 fill-current'
@@ -60,6 +61,7 @@ registerLayer({
     other: Color.YELLOW,
   },
   classifySubtype: (entity: Entity) => classifySatellite((entity as Satellite).name),
+  customLayer: SatellitePropagationLayer,
   detailPanel: SatelliteDetailPanel,
   tooltip: SatelliteTooltip,
   overlays: [SatelliteOrbitOverlay, SatelliteFootprintOverlay],

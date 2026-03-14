@@ -23,6 +23,8 @@ export interface LayerRegistration {
   detailPanel?: ComponentType<{ entityId: string }>
   tooltip?: ComponentType<{ entityId: string }>
   overlays?: ComponentType[]
+  /** Optional custom rendering component that replaces GenericEntityLayer's default rendering. */
+  customLayer?: ComponentType<{ registration: LayerRegistration }>
 }
 
 const registry = new Map<string, LayerRegistration>()

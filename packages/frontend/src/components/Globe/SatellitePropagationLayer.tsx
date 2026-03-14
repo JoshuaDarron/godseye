@@ -1,52 +1,47 @@
 import { useMemo } from 'react'
 import { useLayerVisibilityStore } from '../../stores/layerVisibilityStore'
+import { useSatelliteStore } from '../../stores/satelliteStore'
+import { useSatellitePropagation } from '../../hooks/useSatellitePropagation'
 import ModelLayer, { type ModelEntity } from './ModelLayer'
 import type { LayerRegistration } from '../../registries/layerRegistry'
+import type { Satellite } from '../../types/satellite'
 
-interface Props {
+/**
+ * Custom satellite rendering layer that uses client-side SGP4 propagation
+ * for smooth 60fps movement instead of relying on 1-second server pushes.
+ */
+export default function SatellitePropagationLayer({
+  registration: reg,
+}: {
   registration: LayerRegistration
-}
-
-export default function GenericEntityLayer({ registration: reg }: Props) {
-  const visible = useLayerVisibilityStore((s) => s.layers[reg.key])
-
-  if (!visible) return null
-
-  // Defer to custom layer component if provided (e.g. satellite propagation layer).
-  if (reg.customLayer) {
-    const CustomLayer = reg.customLayer
-    return <CustomLayer registration={reg} />
-  }
-
-  return <DefaultEntityLayer registration={reg} />
-}
-
-function DefaultEntityLayer({ registration: reg }: Props) {
+}) {
   const sublayerMap = useLayerVisibilityStore((s) => s.sublayers[reg.key])
-  const entities = reg.store((s) => s.entities)
+  const entities = useSatelliteStore((s) => s.entities)
+
+  // Propagate all satellite positions at ~60fps from TLE data.
+  const propagated = useSatellitePropagation(entities)
 
   const hasSubtypes = !!(reg.subtypes && reg.classifySubtype)
 
-  // Group entities by subtype (or single group if no subtypes).
+  // Group propagated positions by subtype, filtering by visibility.
   const grouped = useMemo(() => {
     if (!hasSubtypes) {
-      const map = new Map<string, ModelEntity>()
-      entities.forEach((entity, id) => {
-        map.set(id, reg.toModelEntity(entity))
-      })
-      return new Map([['__default', map]])
+      return new Map([['__default', propagated]])
     }
 
     const groups = new Map<string, Map<string, ModelEntity>>()
-    entities.forEach((entity, id) => {
-      const subtype = reg.classifySubtype!(entity)
+    propagated.forEach((modelEntity, id) => {
+      const rawEntity = entities.get(id)
+      if (!rawEntity) return
+
+      const subtype = reg.classifySubtype!(rawEntity as Satellite)
       if (sublayerMap && !sublayerMap[subtype]) return
 
       if (!groups.has(subtype)) groups.set(subtype, new Map())
-      groups.get(subtype)!.set(id, reg.toModelEntity(entity))
+      groups.get(subtype)!.set(id, modelEntity)
     })
     return groups
-  }, [entities, sublayerMap, hasSubtypes, reg])
+  }, [propagated, entities, sublayerMap, hasSubtypes, reg])
 
   if (!hasSubtypes) {
     const map = grouped.get('__default')!
@@ -57,7 +52,6 @@ function DefaultEntityLayer({ registration: reg }: Props) {
         fallbackColor={reg.fallbackColor}
         fallbackPixelSize={reg.fallbackPixelSize}
         iconScale={reg.iconScale}
-        headingOffset={reg.headingOffset}
         layerName={reg.key}
         disableRotation={reg.disableRotation}
       />
