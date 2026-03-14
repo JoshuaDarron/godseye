@@ -3,6 +3,9 @@ import type { Entity } from '../types/common'
 import type { Flight } from '../types/flight'
 import { useFlightStore } from '../stores/flightStore'
 import { FLIGHT_SUBTYPES, classifyFlight } from '../stores/layerVisibilityStore'
+import FlightDetailPanel from '../components/HUD/FlightDetailPanel'
+import FlightTooltip from '../components/HUD/FlightTooltip'
+import FlightTrajectoryOverlay from '../components/Globe/FlightTrajectoryOverlay'
 import { registerLayer } from './layerRegistry'
 
 const ICON_CLASS = 'w-4 h-4 shrink-0 fill-current'
@@ -29,7 +32,7 @@ registerLayer({
   iconUrl: '/models/flight-commercial.svg',
   fallbackColor: Color.CYAN,
   fallbackPixelSize: 3,
-  iconScale: 0.5,
+  iconScale: 0.2,
   headingOffset: 0,
   subtypes: FLIGHT_SUBTYPES,
   subtypeIcons: {
@@ -50,4 +53,7 @@ registerLayer({
     const f = entity as Flight
     return classifyFlight(f.callsign, f.onGround)
   },
+  detailPanel: FlightDetailPanel,
+  tooltip: FlightTooltip,
+  overlays: [FlightTrajectoryOverlay],
 })

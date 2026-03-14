@@ -48,7 +48,9 @@
       "Bash(go vet:*)",
       "Bash(git status:*)",
       "Bash(curl:*)",
-      "WebFetch(domain:openskynetwork.github.io)"
+      "WebFetch(domain:openskynetwork.github.io)",
+      "WebFetch(domain:aviationstack.com)",
+      "Bash(npx tsx:*)"
     ]
   }
 }
