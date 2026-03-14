@@ -51,6 +51,7 @@ git commit -m "<tag>: <Summary of changes.>"
 - **Short** — 50 characters or less for the summary line.
 - **Present tense** — Describe what the commit does, not what you did.
 - **Specific** — Clearly state what changed.
+- **Do NOT add `Co-Authored-By` lines to commit messages.** Commits should contain only the message itself.
 
 ### Tags
 

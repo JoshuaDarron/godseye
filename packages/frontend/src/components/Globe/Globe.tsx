@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Ion, Color, UrlTemplateImageryProvider, Viewer as CesiumViewer, ScreenSpaceEventHandler, ScreenSpaceEventType, defined, Cartesian2 } from 'cesium'
 import { Viewer, Globe as CesiumGlobe, Scene, SkyAtmosphere, useCesium } from 'resium'
 import GenericEntityLayer from './GenericEntityLayer'
 import { layerRegistry } from '../../registries/layerRegistry'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import { useSelectedEntityStore } from '../../stores/selectedEntityStore'
+import { useLayerVisibilityStore } from '../../stores/layerVisibilityStore'
 
 // Import registrations to populate the registry.
 import '../../registries/flights'
@@ -108,10 +109,40 @@ function PickHandler() {
   return null
 }
 
-/** Render overlays for the selected entity's layer. */
+/**
+ * Auto-deselect an entity when its layer or sublayer is toggled off,
+ * and render overlays only when the entity is still visible.
+ */
 function SelectedOverlays() {
   const selected = useSelectedEntityStore((s) => s.selected)
-  if (!selected) return null
+  const clearSelected = useSelectedEntityStore((s) => s.clearSelected)
+  const layers = useLayerVisibilityStore((s) => s.layers)
+  const sublayers = useLayerVisibilityStore((s) => s.sublayers)
+
+  // Determine if the selected entity's layer + sublayer are both visible.
+  const visible = useMemo(() => {
+    if (!selected) return false
+    if (!layers[selected.layer]) return false
+
+    // Check sublayer visibility if the layer uses subtypes.
+    const reg = layerRegistry.get(selected.layer)
+    if (reg?.classifySubtype && reg.store) {
+      const entity = reg.store.getState().getById(selected.entityId)
+      if (entity) {
+        const subtype = reg.classifySubtype(entity)
+        const sublayerMap = sublayers[selected.layer]
+        if (sublayerMap && sublayerMap[subtype] === false) return false
+      }
+    }
+    return true
+  }, [selected, layers, sublayers])
+
+  // Clear selection when entity becomes invisible.
+  useEffect(() => {
+    if (selected && !visible) clearSelected()
+  }, [selected, visible, clearSelected])
+
+  if (!selected || !visible) return null
 
   const reg = layerRegistry.get(selected.layer)
   if (!reg?.overlays?.length) return null
