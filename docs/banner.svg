@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e17" />
+      <stop offset="50%" style="stop-color:#0d1525" />
+      <stop offset="100%" style="stop-color:#0a1628" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4fc3f7;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#4fc3f7;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#4fc3f7;stop-opacity:0" />
+    </linearGradient>
+    <radialGradient id="globe" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1a3a5c" />
+      <stop offset="70%" style="stop-color:#0d1f35" />
+      <stop offset="100%" style="stop-color:#0a0e17" />
+    </radialGradient>
+    <filter id="textGlow">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="dotGlow">
+      <feGaussianBlur stdDeviation="2" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" fill="url(#bg)" />
+
+  <!-- Subtle globe circle -->
+  <circle cx="600" cy="320" r="220" fill="url(#globe)" opacity="0.4" />
+
+  <!-- Grid lines suggesting lat/lng -->
+  <g stroke="#4fc3f7" stroke-width="0.3" opacity="0.1" fill="none">
+    <ellipse cx="600" cy="180" rx="280" ry="80" />
+    <ellipse cx="600" cy="180" rx="280" ry="40" />
+    <ellipse cx="600" cy="180" rx="200" ry="100" />
+    <ellipse cx="600" cy="180" rx="100" ry="100" />
+    <line x1="320" y1="180" x2="880" y2="180" />
+    <line x1="600" y1="80" x2="600" y2="280" />
+  </g>
+
+  <!-- Animated-looking orbit arc -->
+  <path d="M 200 220 Q 400 80, 600 150 Q 800 220, 1000 100" fill="none" stroke="#4fc3f7" stroke-width="1.5" opacity="0.25" stroke-dasharray="8 6" />
+  <path d="M 150 260 Q 450 120, 700 180 Q 900 230, 1050 130" fill="none" stroke="#4fc3f7" stroke-width="1" opacity="0.15" stroke-dasharray="6 8" />
+
+  <!-- Trajectory dots (flights/satellites) -->
+  <g filter="url(#dotGlow)">
+    <circle cx="280" cy="195" r="2.5" fill="#4fc3f7" opacity="0.8" />
+    <circle cx="480" cy="135" r="2" fill="#4fc3f7" opacity="0.6" />
+    <circle cx="720" cy="165" r="2.5" fill="#4fc3f7" opacity="0.8" />
+    <circle cx="900" cy="125" r="2" fill="#4fc3f7" opacity="0.6" />
+    <circle cx="380" cy="210" r="1.5" fill="#ffb74d" opacity="0.6" />
+    <circle cx="820" cy="195" r="1.5" fill="#ffb74d" opacity="0.5" />
+    <circle cx="550" cy="225" r="1.5" fill="#ef5350" opacity="0.5" />
+    <circle cx="650" cy="110" r="1.5" fill="#66bb6a" opacity="0.5" />
+  </g>
+
+  <!-- Connecting lines between some dots -->
+  <g stroke="#4fc3f7" stroke-width="0.5" opacity="0.12">
+    <line x1="280" y1="195" x2="480" y2="135" />
+    <line x1="720" y1="165" x2="900" y2="125" />
+  </g>
+
+  <!-- Horizontal glow line -->
+  <rect x="0" y="260" width="1200" height="1" fill="url(#glow)" />
+
+  <!-- Title -->
+  <text x="600" y="155" text-anchor="middle" font-family="'SF Pro Display', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" letter-spacing="12" fill="#ffffff" filter="url(#textGlow)">GODS EYE</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="195" text-anchor="middle" font-family="'SF Mono', 'JetBrains Mono', 'Fira Code', monospace" font-size="13" letter-spacing="5" fill="#4fc3f7" opacity="0.7">REAL-TIME GLOBAL TRACKING</text>
+
+  <!-- Bottom accent dots -->
+  <g fill="#4fc3f7" opacity="0.3">
+    <circle cx="560" cy="235" r="1.5" />
+    <circle cx="580" cy="235" r="1.5" />
+    <circle cx="600" cy="235" r="1.5" />
+    <circle cx="620" cy="235" r="1.5" />
+    <circle cx="640" cy="235" r="1.5" />
+  </g>
+</svg>
