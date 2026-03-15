@@ -8,7 +8,7 @@ import FlightTooltip from '../components/HUD/FlightTooltip'
 import FlightTrajectoryOverlay from '../components/Globe/FlightTrajectoryOverlay'
 import { registerLayer } from './layerRegistry'
 
-const ICON_CLASS = 'w-4 h-4 shrink-0 fill-current'
+const ICON_CLASS = 'w-7 h-7 shrink-0 fill-current'
 
 registerLayer({
   key: 'flights',

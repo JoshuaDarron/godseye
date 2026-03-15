@@ -10,7 +10,7 @@ import SatelliteFootprintOverlay from '../components/Globe/SatelliteFootprintOve
 import SatellitePropagationLayer from '../components/Globe/SatellitePropagationLayer'
 import { registerLayer } from './layerRegistry'
 
-const ICON_CLASS = 'w-4 h-4 shrink-0 fill-current'
+const ICON_CLASS = 'w-7 h-7 shrink-0 fill-current'
 
 registerLayer({
   key: 'satellites',

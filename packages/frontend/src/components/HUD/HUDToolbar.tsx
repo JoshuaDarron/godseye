@@ -13,7 +13,7 @@ export default function HUDToolbar() {
 
         {/* Layer tabs — center */}
         <div className="flex-1 flex items-center justify-center">
-          <div className="pointer-events-auto flex items-center gap-1 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/[0.08]">
+          <div className="pointer-events-auto flex items-center rounded-xl bg-black/40 backdrop-blur-md border border-white/[0.08] overflow-hidden">
             {LAYERS.map((layer) => (
               <LayerTab key={layer.key} layer={layer} />
             ))}

@@ -13,7 +13,7 @@ export interface LayerConfig {
   subtypes?: Record<string, string>
 }
 
-const ICON_CLASS = 'w-4 h-4 shrink-0 fill-current'
+const ICON_CLASS = 'w-7 h-7 shrink-0 fill-current'
 
 /** Static layer entries for layers not yet backed by data. */
 const PLACEHOLDER_LAYERS: LayerRegistration[] = [

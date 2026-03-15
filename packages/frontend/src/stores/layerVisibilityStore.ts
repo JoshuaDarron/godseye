@@ -45,11 +45,11 @@ const defaultSublayers: Record<string, SublayerMap> = {
 
 export const useLayerVisibilityStore = create<LayerVisibilityState>((set, get) => ({
   layers: {
-    flights: true,
-    satellites: true,
-    vessels: true,
-    trains: true,
-    events: true,
+    flights: false,
+    satellites: false,
+    vessels: false,
+    trains: false,
+    events: false,
   },
   sublayers: defaultSublayers,
 

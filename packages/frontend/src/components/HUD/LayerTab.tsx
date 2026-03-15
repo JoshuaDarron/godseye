@@ -39,14 +39,14 @@ export default memo(function LayerTab({ layer }: { layer: LayerConfig }) {
     >
       <button
         onClick={() => toggle(layer.key)}
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer select-none transition-colors ${
+        className={`flex flex-col items-center justify-center w-20 h-20 text-xs font-medium cursor-pointer select-none transition-colors ${
           active
             ? 'text-white bg-white/10'
             : 'text-white/40 hover:text-white/60 hover:bg-white/5'
         }`}
       >
         {layer.icon}
-        <span>{layer.label}</span>
+        <span className="mt-1">{layer.label}</span>
       </button>
 
       {isOpen && (
