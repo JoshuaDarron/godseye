@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from 'react'
-import { Cartesian3, Math as CesiumMath } from 'cesium'
+import { BoundingSphere, Cartesian3, HeadingPitchRange, Math as CesiumMath } from 'cesium'
 import { useHudStore } from '../../stores/hudStore'
 import { useLayerVisibilityStore } from '../../stores/layerVisibilityStore'
 import { useSelectedEntityStore } from '../../stores/selectedEntityStore'
@@ -86,15 +86,12 @@ export default memo(function SearchResultsPanel() {
     const rawAlt = (result.entity as any).altitude ?? 0
     // Satellites store altitude in km; everything else in meters.
     const alt = result.layer === 'satellites' ? rawAlt * 1000 : rawAlt
-    // Place camera above the entity: 20% above for orbital, 5km above for ground/flights.
-    const cameraAlt = alt > 100_000 ? alt * 1.4 : alt + 10_000
-    viewer.camera.flyTo({
-      destination: Cartesian3.fromDegrees(result.entity.lng, result.entity.lat, cameraAlt),
-      orientation: {
-        heading: 0,
-        pitch: CesiumMath.toRadians(-90),
-        roll: 0,
-      },
+    // Distance from entity to camera.
+    const range = alt > 100_000 ? alt * 2 : 50_000
+
+    const target = Cartesian3.fromDegrees(result.entity.lng, result.entity.lat, alt)
+    viewer.camera.flyToBoundingSphere(new BoundingSphere(target, 0), {
+      offset: new HeadingPitchRange(0, CesiumMath.toRadians(-90), range),
       duration: 1.5,
     })
   }, [setSelected])
