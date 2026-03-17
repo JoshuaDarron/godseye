@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -60,11 +61,26 @@ type EarthquakeWorker struct {
 
 // NewEarthquakeWorker creates a new EarthquakeWorker.
 func NewEarthquakeWorker(pool *pgxpool.Pool, rdb *redis.Client) *EarthquakeWorker {
+	// Force IPv4 to work around USGS IPv6 connection resets.
+	transport := &http.Transport{
+		DialContext: func(ctx context.Context, _, addr string) (net.Conn, error) {
+			return (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext(ctx, "tcp4", addr)
+		},
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:  10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
 	return &EarthquakeWorker{
-		pool:   pool,
-		rdb:    rdb,
-		client: NewHTTPClient(30 * time.Second),
-		prev:   make(map[string]models.EarthquakeEntity),
+		pool: pool,
+		rdb:  rdb,
+		client: &http.Client{
+			Timeout:   30 * time.Second,
+			Transport: transport,
+		},
+		prev: make(map[string]models.EarthquakeEntity),
 	}
 }
 
@@ -88,15 +104,24 @@ func (w *EarthquakeWorker) Start(ctx context.Context) error {
 }
 
 func (w *EarthquakeWorker) tick(ctx context.Context) {
-	entities, err := w.fetch(ctx)
-	if err != nil {
+	// Retry up to 3 times on transient failures before waiting the full poll interval.
+	var entities []models.EarthquakeEntity
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		entities, err = w.fetch(ctx)
+		if err == nil {
+			break
+		}
 		w.failures++
-		backoff := Backoff(w.failures, time.Second, maxBackoffDuration)
-		slog.Error("earthquake fetch failed", "error", err, "failures", w.failures, "backoff", backoff)
+		backoff := Backoff(w.failures, time.Second, 30*time.Second)
+		slog.Error("earthquake fetch failed", "error", err, "failures", w.failures, "attempt", attempt+1, "backoff", backoff)
 		select {
 		case <-ctx.Done():
+			return
 		case <-time.After(backoff):
 		}
+	}
+	if err != nil {
 		return
 	}
 
