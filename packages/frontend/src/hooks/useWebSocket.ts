@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { DeltaMessage } from '../types/common'
 import { entityRegistry } from '../stores/entityRegistry'
+import { useAuthStore } from '../stores/authStore'
 
 // Ensure stores are registered before the hook runs.
 import '../stores/flightStore'
@@ -65,8 +66,12 @@ export function useWebSocket() {
   }, [])
 
   const connect = useCallback(() => {
-    const url = import.meta.env.VITE_WS_URL as string | undefined
-    if (!url) return
+    const baseUrl = import.meta.env.VITE_WS_URL as string | undefined
+    if (!baseUrl) return
+
+    // Append access token as query param if authenticated.
+    const accessToken = useAuthStore.getState().accessToken
+    const url = accessToken ? `${baseUrl}?token=${encodeURIComponent(accessToken)}` : baseUrl
 
     setStatus('connecting')
     const ws = new WebSocket(url)

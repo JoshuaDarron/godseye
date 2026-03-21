@@ -18,6 +18,10 @@ type Client struct {
 	send   chan []byte
 	b      *Broadcaster
 	bounds atomic.Pointer[models.ViewportBounds]
+
+	// UserID is the authenticated user's ID, if a valid token was provided
+	// during the WebSocket upgrade. Empty string means anonymous.
+	UserID string
 }
 
 // NewClient creates a new Client with a buffered send channel.

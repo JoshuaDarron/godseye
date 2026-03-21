@@ -18,6 +18,8 @@ type Config struct {
 	TicketmasterAPIKey  string
 	PredictHQAPIKey     string
 	OpenWeatherAPIKey   string
+
+	JWTSecret string
 }
 
 // Load reads configuration from environment variables, applying defaults where appropriate.
@@ -37,6 +39,8 @@ func Load() *Config {
 		TicketmasterAPIKey:  os.Getenv("TICKETMASTER_API_KEY"),
 		PredictHQAPIKey:     os.Getenv("PREDICTHQ_API_KEY"),
 		OpenWeatherAPIKey:   os.Getenv("OPENWEATHER_API_KEY"),
+
+		JWTSecret: os.Getenv("JWT_SECRET"),
 	}
 }
 
