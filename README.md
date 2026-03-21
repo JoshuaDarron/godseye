@@ -31,12 +31,12 @@ cd services/api && cp .env.example .env && go run ./cmd/server
 cd services/auth && cp .env.example .env && go run ./cmd/server
 
 # Frontend (terminal 3)
-cd packages/frontend && pnpm install && pnpm dev
+cd packages/frontend && cp .env.example .env && pnpm install && pnpm dev
 ```
 
 Open **http://localhost:5173** — you should see a 3D globe with live flights and satellites. Sign-in is available via the button in the top-right corner.
 
-> **Note:** You'll need a free [Cesium Ion](https://ion.cesium.com/) token for terrain/imagery tiles. Set `VITE_CESIUM_ION_TOKEN` in your frontend `.env`. Flights require free [OpenSky Network](https://opensky-network.org/) OAuth2 credentials set in the backend `.env`. The auth service requires a `JWT_SECRET` (shared with the API service) — see Environment Variables below.
+> **Note:** Each service includes a `.env.example` — copy it to `.env` and fill in the values. You'll need a free [Cesium Ion](https://ion.cesium.com/) token for terrain/imagery, [OpenSky Network](https://opensky-network.org/) credentials for flights, and a shared `JWT_SECRET` between the API and auth services.
 
 ---
 
@@ -54,57 +54,6 @@ Open **http://localhost:5173** — you should see a 3D globe with live flights a
 | News / Geopolitical | GDELT Project                     | 15 min         | Planned  |
 | Humanitarian        | ReliefWeb API                     | 15 min         | Planned  |
 | Sports / Concerts   | Ticketmaster, PredictHQ           | 15 min         | Planned  |
-
----
-
-## Environment Variables
-
-### API Service (`services/api/.env`)
-
-```env
-DATABASE_URL=postgres://godseye:godseye@localhost:5433/globaltracker?sslmode=disable
-REDIS_URL=redis://localhost:6379
-SERVER_ADDR=:8080
-JWT_SECRET=<random-64-char-hex>
-
-# OpenSky Network — free, register at https://opensky-network.org/
-OPENSKY_CLIENT_ID=
-OPENSKY_CLIENT_SECRET=
-
-# AISStream — free, register at https://aisstream.io/
-AISSTREAM_API_KEY=
-```
-
-### Auth Service (`services/auth/.env`)
-
-```env
-DATABASE_URL=postgres://godseye:godseye@localhost:5433/globaltracker?sslmode=disable
-AUTH_SERVER_ADDR=:8081
-JWT_SECRET=<same-value-as-api>
-FRONTEND_URL=http://localhost:5173
-
-# Token lifetimes (optional, shown are defaults)
-ACCESS_TOKEN_TTL=15m
-REFRESH_TOKEN_TTL=168h
-
-# GitHub OAuth (optional) — register at https://github.com/settings/developers
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-
-# Google OAuth (optional) — register at https://console.cloud.google.com/
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-```
-
-### Frontend (`packages/frontend/.env`)
-
-```env
-VITE_WS_URL=ws://localhost:8080/ws
-VITE_AUTH_URL=http://localhost:8081
-
-# Cesium Ion — free, register at https://ion.cesium.com/
-VITE_CESIUM_ION_TOKEN=
-```
 
 ---
 
