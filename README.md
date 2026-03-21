@@ -24,54 +24,19 @@ git clone https://github.com/joshuaferrara/godseye.git && cd godseye
 # Start TimescaleDB + Redis
 docker compose up -d
 
-# Backend (in one terminal)
+# API service (terminal 1)
 cd services/api && cp .env.example .env && go run ./cmd/server
 
-# Frontend (in another terminal)
+# Auth service (terminal 2)
+cd services/auth && cp .env.example .env && go run ./cmd/server
+
+# Frontend (terminal 3)
 cd packages/frontend && pnpm install && pnpm dev
 ```
 
-Open **http://localhost:5173** — you should see a 3D globe with live flights and satellites.
+Open **http://localhost:5173** — you should see a 3D globe with live flights and satellites. Sign-in is available via the button in the top-right corner.
 
-> **Note:** You'll need a free [Cesium Ion](https://ion.cesium.com/) token for terrain/imagery tiles. Set `VITE_CESIUM_ION_TOKEN` in your frontend `.env`. Flights require free [OpenSky Network](https://opensky-network.org/) OAuth2 credentials set in the backend `.env`.
-
----
-
-## Features
-
-- **Live flight tracking** — 9,000+ aircraft updated every second via OpenSky Network ADS-B data
-- **Satellite tracking** — 14,000+ objects (ISS, Starlink, GPS, military) with client-side SGP4 orbital propagation
-- **Flight route trajectories** — great-circle arc overlays from departure to arrival airport with animated dash rendering
-- **Subtype classification** — flights (commercial, cargo, military, private) and satellites (Starlink, GPS, weather, science) with distinct icons and colors
-- **Interactive detail panels** — click any entity for live-updating metadata, draggable/resizable HUD panels
-- **Satellite orbit overlays** — full orbital path with animated dash material and nadir ground-track line
-- **Satellite ground footprint** — real-time visibility cone projected onto the globe surface
-- **Layer filtering** — toggle layers and subtypes on/off from the sidebar
-- **1-second WebSocket updates** — Go backend streams delta payloads via Redis pub/sub fan-out
-- **Time-series persistence** — all positions stored in TimescaleDB hypertables with PostGIS geography columns
-
----
-
-## Architecture
-
-```
-[External APIs]
-      |
-      v
-[Go Ingestion Workers]  ────────>  [TimescaleDB + PostGIS]
-  (one per source,                   (persistence + geo queries)
-   goroutine-based)
-      |
-      v
-[Redis Pub/Sub]
-      |
-      v
-[Go WebSocket Server]
-      |
-      v
-[React + CesiumJS Globe]
-  (1-second delta updates via WS)
-```
+> **Note:** You'll need a free [Cesium Ion](https://ion.cesium.com/) token for terrain/imagery tiles. Set `VITE_CESIUM_ION_TOKEN` in your frontend `.env`. Flights require free [OpenSky Network](https://opensky-network.org/) OAuth2 credentials set in the backend `.env`. The auth service requires a `JWT_SECRET` (shared with the API service) — see Environment Variables below.
 
 ---
 
@@ -81,9 +46,9 @@ Open **http://localhost:5173** — you should see a 3D globe with live flights a
 | ------------------- | --------------------------------- | -------------- | -------- |
 | Flights             | OpenSky Network (ADS-B)           | 1 s            | **Live** |
 | Satellites          | CelesTrak TLE + SGP4              | 1 s (computed) | **Live** |
-| Vessels             | AISHub, MarineTraffic             | 1-5 s          | Planned  |
+| Vessels             | AISStream (AIS)                   | 1-5 s          | **Live** |
 | Trains              | OpenRailwayMap, Transitland, GTFS | 5-10 s         | Planned  |
-| Earthquakes         | USGS Earthquake API               | Real-time      | Planned  |
+| Earthquakes         | USGS Earthquake API               | Real-time      | **Live** |
 | Weather Alerts      | OpenWeatherMap                    | Real-time      | Planned  |
 | Armed Conflicts     | ACLED                             | 15 min         | Planned  |
 | News / Geopolitical | GDELT Project                     | 15 min         | Planned  |
@@ -92,75 +57,50 @@ Open **http://localhost:5173** — you should see a 3D globe with live flights a
 
 ---
 
-## Tech Stack
-
-| Layer           | Technology                         |
-| --------------- | ---------------------------------- |
-| Backend         | Go                                 |
-| Database        | TimescaleDB (PostgreSQL) + PostGIS |
-| Cache / Pub-Sub | Redis                              |
-| WebSockets      | nhooyr.io/websocket                |
-| Frontend        | React 18 + Vite + TypeScript       |
-| Package Manager | pnpm                               |
-| Globe           | CesiumJS (via resium)              |
-| State           | Zustand                            |
-| Styling         | Tailwind CSS                       |
-| Infrastructure  | Docker Compose                     |
-
----
-
-## Project Structure
-
-```
-godseye/
-├── docker-compose.yml               # TimescaleDB + Redis
-├── packages/
-│   ├── frontend/                     # React + Vite + pnpm
-│   │   ├── src/
-│   │   │   ├── components/
-│   │   │   │   ├── Globe/            # CesiumJS 3D globe + overlays
-│   │   │   │   ├── HUD/              # Detail panels, tooltips, counters
-│   │   │   │   └── Filters/          # Layer + subtype toggles
-│   │   │   ├── registries/           # Per-layer config (icons, colors, overlays)
-│   │   │   ├── stores/               # Zustand (one store per data layer)
-│   │   │   ├── hooks/                # useWebSocket, useGlobeEntities
-│   │   │   ├── utils/                # Route lookup, helpers
-│   │   │   └── types/                # TypeScript interfaces
-│   │   └── public/
-│   │       ├── models/               # SVG icons for entity subtypes
-│   │       └── data/                 # Static route/airport lookup data
-│   └── shared/                       # Shared TS types (@godseye/shared)
-│
-└── services/
-    └── api/                          # Go backend
-        ├── cmd/server/main.go        # Entry point
-        └── internal/
-            ├── ingestion/            # One worker per data source
-            ├── broadcast/            # Redis pub/sub → WebSocket fan-out
-            ├── db/                   # Connection pool + migrations
-            └── models/               # Entity types
-```
-
----
-
 ## Environment Variables
 
-### Backend (`services/api/.env`)
+### API Service (`services/api/.env`)
 
 ```env
-DATABASE_URL=postgres://godseye:godseye@localhost:5432/globaltracker
+DATABASE_URL=postgres://godseye:godseye@localhost:5433/globaltracker?sslmode=disable
 REDIS_URL=redis://localhost:6379
 SERVER_ADDR=:8080
+JWT_SECRET=<random-64-char-hex>
 
 # OpenSky Network — free, register at https://opensky-network.org/
 OPENSKY_CLIENT_ID=
 OPENSKY_CLIENT_SECRET=
+
+# AISStream — free, register at https://aisstream.io/
+AISSTREAM_API_KEY=
+```
+
+### Auth Service (`services/auth/.env`)
+
+```env
+DATABASE_URL=postgres://godseye:godseye@localhost:5433/globaltracker?sslmode=disable
+AUTH_SERVER_ADDR=:8081
+JWT_SECRET=<same-value-as-api>
+FRONTEND_URL=http://localhost:5173
+
+# Token lifetimes (optional, shown are defaults)
+ACCESS_TOKEN_TTL=15m
+REFRESH_TOKEN_TTL=168h
+
+# GitHub OAuth (optional) — register at https://github.com/settings/developers
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# Google OAuth (optional) — register at https://console.cloud.google.com/
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 ```
 
 ### Frontend (`packages/frontend/.env`)
 
 ```env
 VITE_WS_URL=ws://localhost:8080/ws
+VITE_AUTH_URL=http://localhost:8081
 
 # Cesium Ion — free, register at https://ion.cesium.com/
 VITE_CESIUM_ION_TOKEN=
